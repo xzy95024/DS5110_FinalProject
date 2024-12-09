@@ -1,0 +1,2 @@
+(note:you may need to change the path based on your own hdfs)
+load data inpath '/origin_data/DS5110/log/topic_log/2024-11-02' into table ods_log_inc partition(dt='2024-11-02');

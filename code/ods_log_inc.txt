@@ -1,0 +1,49 @@
+-- Drop the table if it already exists
+DROP TABLE IF EXISTS ods_log_inc;
+
+-- Create an external table named ods_log_inc
+CREATE EXTERNAL TABLE ods_log_inc
+(
+    `common` STRUCTar STRING,         -- Common information App region
+        ba STRING,                     -- App brand
+        ch STRING,                     -- App channel
+        is_new STRING,                 -- Whether the user is new
+        md STRING,                     -- Device model
+        mid STRING,                    -- Device ID
+        os STRING,                     -- Operating system
+        sid STRING,                    -- Session ID
+        uid STRING,                    -- User ID
+        vc STRING COMMENT 'Common information',
+    `page` STRUCTduring_time STRING,  -- Page view duration
+        item STRING,                   -- Item viewed on the page
+        item_type STRING,              -- Type of item
+        last_page_id STRING,           -- ID of the previous page
+        page_id STRING,                -- Current page ID
+        from_pos_id STRING,            -- Source position ID
+        from_pos_seq STRING,           -- Sequence of source position
+        refer_id STRING COMMENT 'Page information',
+    `actions` ARRAYSTRUCTaction_idSTRING, -- User actions
+        itemSTRING,                        -- Action item
+        item_typeSTRING,                   -- Type of action item
+        tsBIGINT COMMENT 'Action information',
+    `displays` ARRAYSTRUCTdisplay_type STRING, -- Type of display (e.g., ad or recommendation)
+        item STRING,                             -- Displayed item
+        item_type STRING,                        -- Type of displayed item
+        `pos_seq` STRING,                        -- Position sequence
+        pos_id STRING COMMENT 'Display information',
+    `start` STRUCTentry STRING,             -- Entry point
+        first_open BIGINT,                   -- Time of first app open
+        loading_time BIGINT,                 -- App loading time
+        open_ad_id BIGINT,                   -- Advertisement ID displayed on app open
+        open_ad_ms BIGINT,                   -- Advertisement display time in milliseconds
+        open_ad_skip_ms BIGINT COMMENT 'Startup information', -- Time to skip advertisement in milliseconds
+    `err` STRUCTerror_codeBIGINT,          -- Error code
+            msgSTRING COMMENT 'Error information', -- Error message
+    `ts` BIGINT  COMMENT 'Timestamp'         -- Event timestamp
+) COMMENT 'Activity information table'
+    PARTITIONED BY (`dt` STRING) -- Partitioned by date
+    ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.JsonSerDe' -- JSON serializationdeserialization
+    LOCATION 'warehousegmallodsods_log_inc' -- Storage location
+    TBLPROPERTIES ('compression.codec'='org.apache.hadoop.io.compress.GzipCodec'); -- Compression codec
+
+-- note this code is copy from the Atguigu

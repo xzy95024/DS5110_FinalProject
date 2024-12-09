@@ -1,0 +1,28 @@
+DROP TABLE IF EXISTS channel_count;
+
+-- Create the table
+CREATE TABLE channel_count
+(
+    ch STRING COMMENT 'Channel name',
+    count BIGINT COMMENT 'Number of occurrences'
+)
+COMMENT 'Table to store the count of each distinct channel'
+STORED AS PARQUET
+LOCATION '/warehouse/gmall/analytics/channel_count/'
+TBLPROPERTIES (
+    'compression'='org.apache.hadoop.io.compress.SnappyCodec',
+    'creator'='Hive Script',
+    'purpose'='Channel count analytics'
+);
+
+-- Insert data into the channel_count table
+INSERT OVERWRITE TABLE channel_count
+SELECT 
+    common.ch AS ch,              -- Channel name
+    COUNT(*) AS count             -- Count of occurrences
+FROM 
+    ods_log_inc
+WHERE 
+    common.ch IS NOT NULL         -- Exclude records with null channel
+GROUP BY 
+    common.ch;                    -- Group by channel name

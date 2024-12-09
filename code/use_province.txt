@@ -1,0 +1,66 @@
+-- Drop the table if it exists
+DROP TABLE IF EXISTS user_count_by_ar;
+
+-- Create the table with additional columns
+CREATE TABLE user_count_by_ar
+(
+    ar_code STRING COMMENT 'Area code',
+    province_name STRING COMMENT 'Province name',
+    area_code STRING COMMENT 'Region area code',
+    iso_code STRING COMMENT 'ISO code',
+    iso_3166_2 STRING COMMENT 'ISO 3166-2 code',
+    user_count BIGINT COMMENT 'Number of unique users in the area'
+)
+COMMENT 'Table to store user counts by area code with additional province details'
+STORED AS PARQUET
+LOCATION '/warehouse/gmall/analytics/user_count_by_ar/'
+TBLPROPERTIES (
+    'compression'='org.apache.hadoop.io.compress.SnappyCodec',
+    'creator'='Hive Script',
+    'purpose'='User analytics by area code'
+);
+
+-- Insert data with join to add province details
+INSERT INTO user_count_by_ar
+SELECT
+    a.common.ar AS ar_code,
+    b.name AS province_name,
+    b.area_code AS area_code,
+    b.iso_code AS iso_code,
+    b.iso_3166_2 AS iso_3166_2,
+    COUNT(DISTINCT a.common.uid) AS user_count
+FROM ods_log_inc a
+LEFT JOIN ods_base_province_full b
+ON a.common.ar = b.region_id  -- Assuming common.ar maps to region_id
+GROUP BY a.common.ar, b.name, b.area_code, b.iso_code, b.iso_3166_2;
+
+
+DROP TABLE IF EXISTS user_province_info;
+
+CREATE TABLE user_province_info
+(
+    ar_code STRING COMMENT 'Area code',
+    province_name STRING COMMENT 'Province name',
+    iso_code STRING COMMENT 'ISO code',
+    iso_3166_2 STRING COMMENT 'ISO 3166-2 code',
+    user_count BIGINT COMMENT 'Number of unique users in the area'
+)
+COMMENT 'Table to store user counts with province details'
+STORED AS PARQUET
+LOCATION '/warehouse/gmall/analytics/user_province_info/'
+TBLPROPERTIES (
+    'compression'='org.apache.hadoop.io.compress.SnappyCodec',
+    'creator'='Hive Script',
+    'purpose'='User analytics with province details'
+);
+
+INSERT INTO user_province_info
+SELECT
+    a.ar_code,
+    b.name AS province_name,
+    b.iso_code,
+    b.iso_3166_2,
+    a.user_count
+FROM user_count_by_ar a
+LEFT JOIN ods_base_province_full b
+ON a.ar_code = b.region_id;

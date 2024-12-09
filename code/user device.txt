@@ -1,0 +1,22 @@
+DROP TABLE IF EXISTS ba_count;
+
+CREATE TABLE ba_count (
+    ba STRING COMMENT 'Brand name',
+    count BIGINT COMMENT 'Number of distinct users'
+)
+COMMENT 'Table to store the count of distinct users for each brand'
+STORED AS PARQUET
+LOCATION '/warehouse/gmall/analytics/ba_count/'
+TBLPROPERTIES (
+    'compression'='org.apache.hadoop.io.compress.SnappyCodec',
+    'creator'='Hive Script',
+    'purpose'='Brand count analytics'
+);
+
+INSERT OVERWRITE TABLE ba_count
+SELECT
+    common.ba AS ba,
+    COUNT(DISTINCT common.uid) AS count
+FROM ods_log_inc
+WHERE common.ba IS NOT NULL AND common.uid IS NOT NULL
+GROUP BY common.ba;
